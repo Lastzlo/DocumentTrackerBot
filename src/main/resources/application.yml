@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST}/doctrackerbot?serverTimezone=Europe/Kiev
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
