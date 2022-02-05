@@ -1,3 +1,7 @@
+bot:
+  botName: "Document Tracker Bot"
+  botToken: ${BOT_TOKEN}
+
 spring:
 
   config:
