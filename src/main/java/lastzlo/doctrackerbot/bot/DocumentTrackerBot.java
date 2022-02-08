@@ -1,12 +1,18 @@
 package lastzlo.doctrackerbot.bot;
 
+import lastzlo.doctrackerbot.model.AppUser;
+import lastzlo.doctrackerbot.service.AppUserService;
+import lastzlo.doctrackerbot.service.UserDocumentService;
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+@Log4j2
 @Component
 public class DocumentTrackerBot extends TelegramLongPollingBot {
 
@@ -15,6 +21,19 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 
 	@Value("${bot.botToken}")
 	private String botToken;
+
+	@Getter
+	private final AppUserService userService;
+
+	@Getter
+	private final UserDocumentService userDocumentService;
+
+
+	@Autowired
+	public DocumentTrackerBot(AppUserService userService, UserDocumentService userDocumentService) {
+		this.userService = userService;
+		this.userDocumentService = userDocumentService;
+	}
 
 	@Override
 	public String getBotUsername() {
@@ -28,19 +47,36 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 
 	@Override
 	public void onUpdateReceived(Update update) {
-		// We check if the update has a message and the message has text
 		if (update.hasMessage() && update.getMessage().hasText()) {
-			SendMessage message = new SendMessage(); // Create a SendMessage object with mandatory fields
-			message.setChatId(update.getMessage().getChatId().toString());
-			message.setText(update.getMessage().getText());
+			handleIncomingMessage(update.getMessage());
+		}
+	}
 
-			try {
-				execute(message); // Call method to send the message
-			} catch (TelegramApiException e) {
-				e.printStackTrace();
-			}
+	private void handleIncomingMessage(Message message) {
+		final String text = message.getText();
+		final long chatId = message.getChatId();
+
+		BotState state;
+
+		AppUser user = userService.findByChatId(chatId);
+		if (user == null) {
+			state = BotState.getInitialState();
+
+			user = userService.saveUser(
+					new AppUser(chatId, BotState.getInitialState())
+			);
+			log.info("New user registered: " + chatId);
+		} else {
+			state = user.getState();
+			log.info("Update received for user: " + user.getChatId() + " in state: " + state);
 		}
 
+		BotContext context = BotContext.of(this, user, text);
+		state = state.nextState(context);
+
+		user.setState(state);
+		userService.saveUser(user);
 	}
+
 
 }
