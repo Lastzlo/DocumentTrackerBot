@@ -13,11 +13,9 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+        dialect: org.hibernate.dialect.MySQL5Dialect
         format_sql: true
-        jdbc:
-          lob:
-            non_contextual_creation: true
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
