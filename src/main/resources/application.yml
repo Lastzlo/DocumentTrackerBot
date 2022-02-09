@@ -1,3 +1,9 @@
+stateRegister:
+  url: "https://reyestr.court.gov.ua/"
+  reviewUrl: "https://reyestr.court.gov.ua/Review/"
+  pagingInfo:
+    itemsPerPage: "1000"
+
 bot:
   botName: "Document Tracker Bot"
   botToken: ${BOT_TOKEN}
