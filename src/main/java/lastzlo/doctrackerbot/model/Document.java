@@ -19,8 +19,12 @@ public class Document {
 
 	@Getter
 	@Setter
-//	@Column(unique=true)
+	@Column(unique=true)
 	private String caseNumber;
+
+	@Getter
+	@Setter
+	private Integer lastCount = 0;
 
 	@Getter
 	@Setter
