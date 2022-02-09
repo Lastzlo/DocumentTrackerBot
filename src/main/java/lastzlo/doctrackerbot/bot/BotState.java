@@ -1,6 +1,7 @@
 package lastzlo.doctrackerbot.bot;
 
 import lastzlo.doctrackerbot.model.AppUser;
+import lastzlo.doctrackerbot.model.Document;
 import lastzlo.doctrackerbot.service.Documents;
 import lastzlo.doctrackerbot.service.UserDocumentService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -32,6 +33,7 @@ public enum BotState {
             switch (input) {
                 case ("/help")  -> nextState = HELP.nextState(context);
                 case ("/add")  -> nextState = ADD_DOCUMENT.nextState(context);
+                case ("/sync") -> nextState = SYNC_DOCUMENT.nextState(context);
                 case ("/delete")  -> nextState = DELETE_DOCUMENT.nextState(context);
                 case ("/list")  -> nextState = LIST.nextState(context);
                 default -> {
@@ -84,8 +86,8 @@ public enum BotState {
                     sendMessage(context, text);
 
                     //sync document
-
-                    return WAIT_FOR_COMMAND;
+                    BotContext botContext = BotContext.of(context.getBot(), context.getUser(), context.getInput());
+                    return SYNC_DOCUMENT.nextState(botContext);
                 } else {
                     String text = "Document with case number: " + input +
                             " has already been added, try to write another case number, \n" +
@@ -103,6 +105,48 @@ public enum BotState {
                         "But if you want to do another command write /back";
                 sendMessage(context, text);
                 return ADD_DOCUMENT;
+            }
+        }
+    },
+    SYNC_DOCUMENT {
+        @Override
+        public BotState nextState(BotContext context) {
+            String input = context.getInput();
+
+            if (input.equals("/sync")) {
+                String text = "Please write case number,\n" +
+                        "for example: 123/456/789";
+                sendMessage(context, text);
+                return SYNC_DOCUMENT;
+            } else if (Documents.isCaseNumber(input)) {
+                UserDocumentService service = context.getBot().getUserDocumentService();
+
+                Document document = service.getDocumentByUserAndDocumnetCaseNumber(context.getUser(), input);
+                if (document == null) {
+                    String text = "You don't added document with case number: " + input +
+                            " try to write another case number,\n" +
+                            "or you can see all documents by /list,\n" +
+                            "or add new document by /add";
+                    sendMessage(context, text);
+                    return SYNC_DOCUMENT;
+                } else {
+                    String text = "Please wait, now I synchronise information about document with case number: " + input;
+                    sendMessage(context, text);
+
+                    service.synchronizeDocument(document, context);
+                    return WAIT_FOR_COMMAND;
+                }
+            } else if (input.equals("/back")) {
+                return BACK.nextState(context);
+            } else if (input.equals("/list")) {
+                return LIST.nextState(context);
+            } else if (input.equals("/add")) {
+                return ADD_DOCUMENT.nextState(context);
+            } else {
+                String text = "I can't parse it, please try one more time \n" +
+                        "But if you want to do another command write /back";
+                sendMessage(context, text);
+                return SYNC_DOCUMENT;
             }
         }
     },
@@ -140,11 +184,6 @@ public enum BotState {
 
                 UserDocumentService service = context.getBot().getUserDocumentService();
                 boolean isSuccessDeleted = service.deleteDocumentFromUser(input, context.getUser());
-
-//                DocumentService docService = context.getBot().getDocumentService();
-//                boolean isSuccessDeleted = docService.deleteDocumentFromUser(
-//                        input,
-//                        context.getUser());
 
                 if (isSuccessDeleted) {
                     String text = "Document with case number: " + input + " was deleted";
