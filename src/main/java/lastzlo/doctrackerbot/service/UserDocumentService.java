@@ -73,7 +73,7 @@ public class UserDocumentService {
 		} else {
 			userDocumentsRepo.delete(userDocument);
 
-			if (hasUsersWithDocument(document.getId())) documentService.deleteDocument(document);
+			if (! hasUsersWithDocument(document.getId())) documentService.deleteDocument(document);
 
 			return true;
 		}
