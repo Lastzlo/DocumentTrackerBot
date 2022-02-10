@@ -7,8 +7,8 @@ stateRegister:
 bot:
   botName: "Document Tracker Bot"
   botToken: ${BOT_TOKEN}
-  limitDocumentsAtOneMessage: ${LIMIT_DOC_AT_MESSAGE}
-  limitDocumentSyncsWithoutUpdate: ${LIMIT_DOC_SYNCS}
+  limitDocumentsAtOneMessage: 2
+  limitDocumentSyncsWithoutUpdate: 40
   # every 2 minutes
   # 0 */2 * * * *
   # past hour 18 on every day-of-week from Monday through Friday =
