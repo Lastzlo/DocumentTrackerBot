@@ -29,7 +29,7 @@ public class UserDocumentService {
 	* default value of count of synchronizations
 	* without changing the count documents count
 	* */
-	@Value("#{new Integer('${bot.limitDocumentSyncsWithoutUpdate}')}")
+	@Value("${bot.limitDocumentSyncsWithoutUpdate}")
 	private Integer defoultCountOfSyncsWithoutUpdate;
 
 	private final UserDocumentsRepo userDocumentsRepo;
@@ -138,9 +138,6 @@ public class UserDocumentService {
 		}
 
 		documentService.resetDocumentCountOfSyncs(document);
-	}
-
-	public void synchronizeAllUserDocuments(BotContext context) {
 	}
 
 	private void notifyUserAboutActualDocuments(

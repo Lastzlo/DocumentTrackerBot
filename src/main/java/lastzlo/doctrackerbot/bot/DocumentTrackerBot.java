@@ -72,12 +72,17 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 			log.info("New user registered: " + chatId);
 		} else {
 			state = user.getState();
-			log.info("Update received for user: " + user.getChatId() + " in state: " + state);
+			log.info(String.format("""
+					Update received from user: %s,
+					text: %s,
+					state: %s""", chatId, text, state));
 		}
+
 
 		BotContext context = BotContext.of(this, user, text);
 		state = state.nextState(context);
 
+		log.info(String.format("User: %s state changed to %s", chatId, state));
 		user.setState(state);
 		userService.saveUser(user);
 	}
@@ -96,6 +101,7 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 		message.setText(text);
 
 		try {
+			log.info(String.format("Message was sent to user: %s text message:\n%s", chatId,  text));
 			execute(message);
 		} catch (TelegramApiException e) {
 			TelegramApiRequestException requestException = (TelegramApiRequestException) e;
@@ -106,6 +112,7 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 				e.printStackTrace();
 			}
 		}
+
 	}
 
 	public void sendMessage(String chatId, String text) {
@@ -114,6 +121,7 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 				.text(text)
 				.build();
 		try {
+			log.info(String.format("Message was sent to user: %s text message:\n%s", chatId,  text));
 			execute(message);
 		} catch (TelegramApiException e) {
 			TelegramApiRequestException requestException = (TelegramApiRequestException) e;
