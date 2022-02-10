@@ -7,12 +7,12 @@ stateRegister:
 bot:
   botName: "Document Tracker Bot"
   botToken: ${BOT_TOKEN}
-  limitDocumentsAtOneMessage: ${LIMIT}
-  # every 2 minutes = 0 */2 * * * *
-  # every 2 minutes = 0 13 22 * * *
-  # every day on 22:02 minutes = 0 3 22 * * *
-  # past hour 11, 14, and 17 on every day-of-week from Monday through Friday =
-  # 0 0 11,14,17 * * MON-FRI
+  limitDocumentsAtOneMessage: ${LIMIT_DOC_AT_MESSAGE}
+  limitDocumentSyncsWithoutUpdate: ${LIMIT_DOC_SYNCS}
+  # every 2 minutes
+  # 0 */2 * * * *
+  # past hour 18 on every day-of-week from Monday through Friday =
+  # 0 0 18 * * MON-FRI
   synchroniseCron: "0 0 18 * * MON-FRI"
   timezone: "Europe/Kiev"
 

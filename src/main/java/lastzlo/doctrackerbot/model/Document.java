@@ -24,7 +24,11 @@ public class Document {
 
 	@Getter
 	@Setter
-	private Integer lastCount = 0;
+	private Integer countOfDocumentsFoundLastTime = 0;
+
+	@Getter
+	@Setter
+	private Integer countOfSyncsByCaseNumber = 0;
 
 	@Getter
 	@Setter

@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 
 @Log4j2
 @Component
@@ -88,7 +89,7 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 		log.info("Synchronization of all documents finished");
 	}
 
-	public void sendMarkDownMessage(String chatId, String text) {
+	public void sendMDMessage(String chatId, String text) {
 		SendMessage message = new SendMessage();
 		message.enableMarkdown(true);
 		message.setChatId(chatId);
@@ -97,8 +98,40 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 		try {
 			execute(message);
 		} catch (TelegramApiException e) {
-			e.printStackTrace();
+			TelegramApiRequestException requestException = (TelegramApiRequestException) e;
+			if (requestException.getErrorCode() == 403) {
+				log.warn("Bot was blocked by the user with chatId = " + chatId);
+				stopBotForUserWhoBlockedIt(chatId);
+			} else {
+				e.printStackTrace();
+			}
 		}
+	}
+
+	public void sendMessage(String chatId, String text) {
+		SendMessage message = SendMessage.builder()
+				.chatId(chatId)
+				.text(text)
+				.build();
+		try {
+			execute(message);
+		} catch (TelegramApiException e) {
+			TelegramApiRequestException requestException = (TelegramApiRequestException) e;
+			if (requestException.getErrorCode() == 403) {
+				log.warn("Bot was blocked by the user with chatId = " + chatId);
+				stopBotForUserWhoBlockedIt(chatId);
+			} else {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void stopBotForUserWhoBlockedIt(String chatId) {
+		AppUser user = userService.findByChatId(Long.valueOf(chatId));
+		user.setState(BotState.STOPPED);
+		userService.saveUser(user);
+		userDocumentService.deleteAllDocumentsFromUser(user);
+		log.warn("Bot stopped for user with chatId = " + chatId);
 	}
 
 }

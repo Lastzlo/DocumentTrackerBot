@@ -4,43 +4,38 @@ import lastzlo.doctrackerbot.model.AppUser;
 import lastzlo.doctrackerbot.model.Document;
 import lastzlo.doctrackerbot.service.Documents;
 import lastzlo.doctrackerbot.service.UserDocumentService;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.List;
 
 public enum BotState {
-//	ADD_DOC, +
-//	SYNC_DOC,
-//	WAIT_FOR_COMMAND,
-//	SYNC_ALL,
-//	DELETE_DOC, +
-//	LIST    +
-    Start {
+    START {
         @Override
         public BotState nextState(BotContext context) {
-            sendMessage(context, "Welcome! now you can write /add for add you document, or /help for watch all commands");
+            sendMDMessage(context, """
+                    Welcome! You can add tracked document by write /add, 
+                    or /help for watch all commands""");
             return WAIT_FOR_COMMAND;
         }
-
     },
     WAIT_FOR_COMMAND {
         @Override
         public BotState nextState(BotContext context) {
 
             String input = context.getInput();
-            
             BotState nextState;
-            
+
             switch (input) {
-                case ("/help")  -> nextState = HELP.nextState(context);
+                case ("/start")  -> nextState = HELP.nextState(context);
                 case ("/add")  -> nextState = ADD_DOCUMENT.nextState(context);
                 case ("/sync") -> nextState = SYNC_DOCUMENT.nextState(context);
-                case ("/delete")  -> nextState = DELETE_DOCUMENT.nextState(context);
+                case ("/sync_all") -> nextState = SYNC_ALL.nextState(context);
                 case ("/list")  -> nextState = LIST.nextState(context);
-                default -> {
-                    nextState = CANT_UNDERSTAND.nextState(context);
-                }
+                case ("/delete")  -> nextState = DELETE_DOCUMENT.nextState(context);
+                case ("/help")  -> nextState = HELP.nextState(context);
+                case ("/stop")  -> nextState = STOP.nextState(context);
+                default -> nextState = CANT_UNDERSTAND.nextState(context);
             }
-            
+
             return nextState;
         }
     },
@@ -48,14 +43,15 @@ public enum BotState {
         @Override
         public BotState nextState(BotContext context) {
             String text = """
-                    Document Tracker bot can execute the following commands:\s
-                    /add - Add document\s
-                    /sync - Sync one\s
-                    /syncAll - Sync all documents now\s
-                    /list - Show list traced documents\s
-                    /delete - Delete document\s
-                    /help - Show all commands\s
-                    /stop - Stop working bot""";
+                Bot can execute the following commands:
+                /start - Start working bot
+                /add - Add tracked document
+                /sync - Synchronize one
+                /sync_all - Synchronize all
+                /list - Show list traced documents
+                /delete - Delete tracked document
+                /help - Show all commands
+                /stop - Stop working bot""";
             sendMessage(context, text);
 
             return WAIT_FOR_COMMAND;
@@ -67,32 +63,31 @@ public enum BotState {
             String input = context.getInput();
 
             if (input.equals("/add")) {
-                String text = "Please write case number,\n" +
-                        "for example: 123/456/789";
-                sendMessage(context, text);
+                String text = """
+                    Please write case number,
+                    for example: *123/456/789*""";
+                sendMDMessage(context, text);
                 return ADD_DOCUMENT;
             } else if (Documents.isCaseNumber(input)) {
                 UserDocumentService service = context.getBot().getUserDocumentService();
-
-                boolean isSuccessAdded = service.addDocumentToUser(input, context.getUser());
-
-//                DocumentService docService = context.getBot().getDocumentService();
-//                boolean isSuccessAdded = docService.addDocumentToUser(
-//                        input,
-//                        context.getUser());
+                String caseNumber = input;
+                boolean isSuccessAdded = service.addDocumentToUser(caseNumber, context.getUser());
 
                 if (isSuccessAdded) {
-                    String text = "Document with case number: " + input + " was added";
-                    sendMessage(context, text);
+                    String text = """
+                        Document with case number: *%s* was added""".formatted(caseNumber);
+                    sendMDMessage(context, text);
 
-                    //sync document
-                    BotContext botContext = BotContext.of(context.getBot(), context.getUser(), context.getInput());
+                    // sync document, caseNumber value was placed in bot context
+                    // to make next command /sync work with case number
+                    BotContext botContext = BotContext.of(context.getBot(), context.getUser(), caseNumber);
                     return SYNC_DOCUMENT.nextState(botContext);
                 } else {
-                    String text = "Document with case number: " + input +
-                            " has already been added, try to write another case number, \n" +
-                            "or you can see all documents by running /list";
-                    sendMessage(context, text);
+                    String text = """
+                        Document with case number: *%s*
+                        has already been added, try to write another case number,
+                        or you can see your documents by running /list""".formatted(caseNumber);
+                    sendMDMessage(context, text);
                     return ADD_DOCUMENT;
                 }
 
@@ -101,9 +96,10 @@ public enum BotState {
             } else if (input.equals("/list")) {
                 return LIST.nextState(context);
             } else {
-                String text = "I can't parse it, please try one more time \n" +
-                        "But if you want to do another command write /back";
-                sendMessage(context, text);
+                String text = """
+                        I can't parse it, please try one more time
+                        But if you want to do another command write /back""";
+                sendMDMessage(context, text);
                 return ADD_DOCUMENT;
             }
         }
@@ -114,26 +110,31 @@ public enum BotState {
             String input = context.getInput();
 
             if (input.equals("/sync")) {
-                String text = "Please write case number,\n" +
-                        "for example: 123/456/789";
-                sendMessage(context, text);
+                String text = """
+                        Please write case number,
+                        for example: *123/456/789*""";
+                sendMDMessage(context, text);
                 return SYNC_DOCUMENT;
             } else if (Documents.isCaseNumber(input)) {
                 UserDocumentService service = context.getBot().getUserDocumentService();
+                String caseNumber = input;
 
-                Document document = service.getDocumentByUserAndDocumnetCaseNumber(context.getUser(), input);
+                Document document = service.getDocumentByUserAndDocumentCaseNumber(context.getUser(), caseNumber);
                 if (document == null) {
-                    String text = "You don't added document with case number: " + input +
-                            " try to write another case number,\n" +
-                            "or you can see all documents by /list,\n" +
-                            "or add new document by /add";
-                    sendMessage(context, text);
+                    String text = """
+                        You don't added document with case number: *%s*
+                        try to write another case number,
+                        or you can see all documents by /list,
+                        or add new document by /add""".formatted(caseNumber);
+                    sendMDMessage(context, text);
                     return SYNC_DOCUMENT;
                 } else {
-                    String text = "Please wait, now I synchronise information about document with case number: " + input;
-                    sendMessage(context, text);
+                    String text = """
+                        Please wait, now I synchronising information
+                        about document with case number: *%s*""".formatted(caseNumber);
+                    sendMDMessage(context, text);
 
-                    service.synchronizeDocument(document, context);
+                    service.synchronizeUserDocument(document, context);
                     return WAIT_FOR_COMMAND;
                 }
             } else if (input.equals("/back")) {
@@ -143,18 +144,47 @@ public enum BotState {
             } else if (input.equals("/add")) {
                 return ADD_DOCUMENT.nextState(context);
             } else {
-                String text = "I can't parse it, please try one more time \n" +
-                        "But if you want to do another command write /back";
-                sendMessage(context, text);
+                String text = """
+                    I can't parse it, please try one more time
+                    But if you want to do another command write /back""";
+                sendMDMessage(context, text);
                 return SYNC_DOCUMENT;
             }
+        }
+    },
+    SYNC_ALL {
+        @Override
+        public BotState nextState(BotContext context) {
+
+            UserDocumentService service = context.getBot()
+                    .getUserDocumentService();
+
+            List<Document> documents = service.getDocumentsByUser(context.getUser());
+
+            if (documents.size() == 0) {
+                String text = """
+                        You haven't documents for synchronising
+                        Write /add for add tracked document""";
+                sendMDMessage(context, text);
+            } else {
+                String text = """
+                        Please wait, now I synchronising information
+                        about all yours documents""";
+                sendMDMessage(context, text);
+
+                documents.forEach(doc -> {
+                    service.synchronizeUserDocument(doc, context);
+                });
+            }
+
+            return WAIT_FOR_COMMAND;
         }
     },
     BACK {
         @Override
         public BotState nextState(BotContext context) {
             String text = "OK, now you can run any command from /help";
-            sendMessage(context, text);
+            sendMDMessage(context, text);
             return BotState.WAIT_FOR_COMMAND;
         }
     },
@@ -163,10 +193,8 @@ public enum BotState {
         public BotState nextState(BotContext context) {
             AppUser user = context.getUser();
             UserDocumentService service = context.getBot().getUserDocumentService();
-            String documents = service.getDocumentsByUserInOneString(user);
-
-            String text = "List of documents:\n" + documents;
-            sendMessage(context, text);
+            String text = service.getMessageOfListUserDocuments(user);
+            sendMDMessage(context, text);
             return BotState.WAIT_FOR_COMMAND;
         }
     },
@@ -176,9 +204,10 @@ public enum BotState {
             String input = context.getInput();
 
             if (input.equals("/delete")) {
-                String text = "Please write case number,\n" +
-                        "for example: 123/456/789";
-                sendMessage(context, text);
+                String text = """
+                        Please write case number,
+                        for example: *123/456/789*""";
+                sendMDMessage(context, text);
                 return DELETE_DOCUMENT;
             } else if (Documents.isCaseNumber(input)) {
 
@@ -186,15 +215,17 @@ public enum BotState {
                 boolean isSuccessDeleted = service.deleteDocumentFromUser(input, context.getUser());
 
                 if (isSuccessDeleted) {
-                    String text = "Document with case number: " + input + " was deleted";
-                    sendMessage(context, text);
+                    String text = """
+                            Document with case number: *%s* was deleted""".formatted(input);
+                    sendMDMessage(context, text);
                     return WAIT_FOR_COMMAND;
                 } else  {
-                    String text = "Document with case number: " + input +
-                            " not found in documents, " +
-                            "try to write another case number, \n" +
-                            "or you can see all documents by running /list";
-                    sendMessage(context, text);
+                    String text = """
+                            Document with case number: *%s*
+                            not found in documents,
+                            try to write another case number,
+                            or you can see all documents by running /list""".formatted(input);
+                    sendMDMessage(context, text);
                     return DELETE_DOCUMENT;
                 }
             } else if (input.equals("/back")) {
@@ -202,19 +233,51 @@ public enum BotState {
             } else if (input.equals("/list")) {
                 return LIST.nextState(context);
             } else {
-                String text = "I can't parse it, please try one more time \n" +
-                        "But if you want to do another command write /back";
-                sendMessage(context, text);
+                String text = """
+                        I can't parse it, please try one more time
+                        But if you want to do another command write /back""";
+                sendMDMessage(context, text);
                 return DELETE_DOCUMENT;
             }
+        }
+    },
+    STOP {
+        @Override
+        public BotState nextState(BotContext context) {
+            String input = context.getInput();
+
+            if (input.equals("/stop")) {
+                String text = """
+                        You definitely want to stop the bot?
+                        Your documents will no longer be tracked
+                        Write /yes to stop the bot,
+                        or /no to keep the bot running""";
+                sendMDMessage(context, text);
+                return STOP;
+            } else if (input.equals("/yes")) {
+                //do delete
+                context.getBot().getUserDocumentService().deleteAllDocumentsFromUser(context.getUser());
+                String text = "See you soon!";
+                sendMDMessage(context, text);
+                return STOPPED;
+            } else {
+                return BACK.nextState(context);
+            }
+        }
+    },
+    STOPPED {
+        @Override
+        public BotState nextState(BotContext context) {
+            return START.nextState(context);
         }
     },
     CANT_UNDERSTAND {
         @Override
         public BotState nextState(BotContext context) {
-            String text = "I can't understand what you need,\n" +
-                    "please write /help for show all commands";
-            sendMessage(context, text);
+            String text = """
+                I can't understand what you need,
+                please write /help for show all commands""";
+            sendMDMessage(context, text);
 
             return WAIT_FOR_COMMAND;
         }
@@ -222,19 +285,21 @@ public enum BotState {
 
 
     public static BotState getInitialState() {
-        return Start;
+        return START;
+    }
+
+    protected void sendMDMessage(BotContext context, String text) {
+        context.getBot().sendMDMessage(
+                String.valueOf(context.getUser().getChatId()),
+                text
+        );
     }
 
     protected void sendMessage(BotContext context, String text) {
-        SendMessage message = SendMessage.builder()
-                .chatId(String.valueOf(context.getUser().getChatId()))
-                .text(text)
-                .build();
-        try {
-            context.getBot().execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        context.getBot().sendMessage(
+                String.valueOf(context.getUser().getChatId()),
+                text
+        );
     }
 
     public abstract BotState nextState(BotContext context);
