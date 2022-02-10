@@ -32,4 +32,19 @@ public class DocumentService {
 	public List<Document> getAll() {
 		return documentRepo.findAll();
 	}
+
+	public Document updateDocumentCountOfDocuments(Document document, int countOfDocuments) {
+		document.setCountOfDocumentsFoundLastTime(countOfDocuments);
+		return saveDocument(document);
+	}
+
+	public Document resetDocumentCountOfSyncs(Document document) {
+		document.setCountOfSyncsByCaseNumber(0);
+		return saveDocument(document);
+	}
+
+	public Document updateDocumentCountOfSyncs(Document document, int newCountOfSyncs) {
+		document.setCountOfSyncsByCaseNumber(newCountOfSyncs);
+		return saveDocument(document);
+	}
 }
