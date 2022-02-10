@@ -96,16 +96,6 @@ public class UserDocumentService {
 		return size != 0;
 	}
 
-//	public List<AppUser> getUsersByDocument(Document document) {
-//		List<UserDocument> userDocumentList = userDocumentsRepo.findAllByDocument_Id(document.getId());
-//
-//		return userDocumentList.stream()
-//				.map(userDocument -> userDocument.getAppUser())
-//				.collect(Collectors.toList());
-//
-//
-//	}
-
 	public String getDocumentsByUserInOneString(AppUser user) {
 		return userDocumentsRepo.findAllByAppUser_Id(user.getId())
 				.stream()
@@ -174,24 +164,12 @@ public class UserDocumentService {
 	}
 
 	private void notifyUserAboutActualDocuments(Document document, BotContext context, List<StateRegisterDocument> stateRegisterDocuments) {
-//		StringBuilder builder = new StringBuilder().append("Found ")
-//				.append(stateRegisterDocuments.size())
-//				.append(" document(s)\n")
-//				.append("with this case number: ")
-//				.append(document.getCaseNumber())
-//				.append("\nLast added document(s):\n");
-
 		long countElementsToSkip = getCountElementsToSkip(stateRegisterDocuments);
 		String documentsToString = stateRegisterDocuments.stream()
 				.sorted(StateRegisterDocument::compareTo)
 				.skip(countElementsToSkip)
 				.map(StateRegisterService.DocumentAdapter::toMarkDown)
 				.collect(Collectors.joining("\n------------\n"));
-
-//		String message = builder
-//				.append("------------\n")
-//				.append(documentsToString)
-//				.toString();
 
 		String message = ("""
 		Found %d document(s),
@@ -208,15 +186,6 @@ public class UserDocumentService {
 				message
 		);
 	}
-
-
-//	private String handleStateRegisterDocuments(List<StateRegisterDocument> stateRegisterDocuments, Document document) {
-//		if (stateRegisterDocuments.size() == document.getLastCount()) {
-//			return handleWhenCountNotChanged(stateRegisterDocuments);
-//		} else {
-//			return handleWhenCountChanged(stateRegisterDocuments, document);
-//		}
-//	}
 
 	private String getMessageWhenCountChanged(List<StateRegisterDocument> stateRegisterDocuments, Document document) {
 		List<StateRegisterDocument> newDocuments = stateRegisterDocuments.stream()
@@ -239,25 +208,6 @@ public class UserDocumentService {
 			document.getCaseNumber(),
 			documentsToString
 		);
-
-//		StringBuilder builder = new StringBuilder()
-//				.append("Found ")
-//				.append(newDocuments.size())
-//				.append(" **NEW** document(s)\n")
-//				.append("with this case number: **")
-//				.append(document.getCaseNumber())
-//				.append("**\nLast added document(s):\n");
-
-//		long skipElements = getCountElementsToSkip(newDocuments);
-//		String documentsToString = newDocuments.stream()
-//				.skip(skipElements)
-//				.map(StateRegisterService.DocumentAdapter::toMarkDown)
-//				.collect(Collectors.joining("\n------------\n"));
-
-//		return builder
-//				.append("------------\n")
-//				.append(documentsToString)
-//				.toString();
 	}
 
 	private long getCountElementsToSkip(List<StateRegisterDocument> stateRegisterDocuments) {

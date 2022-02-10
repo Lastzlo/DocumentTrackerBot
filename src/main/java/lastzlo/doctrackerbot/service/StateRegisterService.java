@@ -34,18 +34,6 @@ public class StateRegisterService {
 		return htmlPage;
 	}
 
-//	public int getCountOfDocumentsByCaseNumber(String html, String caseNumber) {
-//		int count = (int) Jsoup.parse(html)
-//				.getElementsByAttributeValueContaining("class", "CaseNumber tr")
-//				.stream()
-//				.filter(el -> el.html().equals(caseNumber))
-//				.count();
-//
-//		log.info(String.format("found %d documents with case number = %s",
-//				count, caseNumber));
-//		return count;
-//	}
-
 
 	public List<StateRegisterDocument> getDocumentsByCaseNumber(String caseNumber) {
 		String htmlPage = getHtmlPageByCaseNumber(caseNumber);
