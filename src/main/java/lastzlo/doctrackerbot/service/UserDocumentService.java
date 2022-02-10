@@ -220,25 +220,19 @@ public class UserDocumentService {
 		return skipElements;
 	}
 
-//	private String handleWhenCountNotChanged(List<StateRegisterDocument> stateRegisterDocuments) {
-//		StringBuilder builder = new StringBuilder().append("Not found new documents, last");
-//
-//		if (stateRegisterDocuments.size() == 1) {
-//			builder.append(" document:\n");
-//		} else {
-//			builder.append(" documents:\n");
-//		}
-//
-//		long skipElements = getCountElementsToSkip(stateRegisterDocuments);
-//
-//		String documentsToString = stateRegisterDocuments.stream()
-//				.sorted(StateRegisterDocument::compareTo)
-//				.skip(skipElements)
-//				.map(StateRegisterService.DocumentAdapter::toMarkDown)
-//				.collect(Collectors.joining("\n------------\n"));
-//		String message = builder.append(documentsToString).toString();
-//		return message;
-//	}
+	public void synchroniseAllDocuments(DocumentTrackerBot bot) {
+		List<Document> documents = documentService.getAll();
+		log.info(String.format("Found %d documends for synchronise", documents.size()));
 
+		documents.forEach(document -> {
+			List<StateRegisterDocument> documentsByCaseNumber = stateRegisterService.getDocumentsByCaseNumber(document.getCaseNumber());
+
+			if (documentsByCaseNumber.size() != document.getLastCount()) {
+				notifyAllUsersAboutUpdateDocument(documentsByCaseNumber, document, bot);
+			}
+
+		});
+
+	}
 
 }

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -80,7 +81,12 @@ public class DocumentTrackerBot extends TelegramLongPollingBot {
 		userService.saveUser(user);
 	}
 
-
+	@Scheduled(cron = "${bot.synchroniseCron}", zone = "${bot.timezone}")
+	private void synchroniseAllDocuments() {
+		log.info("Synchronization of all documents started");
+		userDocumentService.synchroniseAllDocuments(this);
+		log.info("Synchronization of all documents finished");
+	}
 
 	public void sendMarkDownMessage(String chatId, String text) {
 		SendMessage message = new SendMessage();
